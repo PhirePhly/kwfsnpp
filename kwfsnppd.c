@@ -6,11 +6,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <unistd.h>
 
 
 int main (int argc, char **argv) {
 	int rc;
+
+	openlog(NULL, LOG_PERROR | LOG_PID, LOG_DAEMON);
 
 	while (1) {
 		rc = getopt(argc, argv, "h");
@@ -19,10 +22,13 @@ int main (int argc, char **argv) {
 
 		switch (rc) {
 			case 'h':
-				// Do something
+				goto usage;
 				break;
 		}
 	}
+
+
+	syslog(LOG_DEBUG, "Start of program");
 
 	printf("Hello world!\n");
 
@@ -33,5 +39,6 @@ usage:
 	exit(1);
 
 }
+
 
 

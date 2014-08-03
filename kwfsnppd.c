@@ -59,8 +59,9 @@ usage:
 
 
 void snpp_listen () {
-	int rc, yes = 1;
-	int snpp_sock;
+	int rc, i, yes = 1;
+	fd_set snpp_sock, snpp_newconn;
+	int snpp_fdmax;
 	struct addrinfo hints, *svrif, *nextif;
 
 	syslog(LOG_DEBUG, "Binding to SNPP port %s", svrstate.snpp_port);
@@ -76,72 +77,106 @@ void snpp_listen () {
 		exit(EXIT_FAILURE);
 	}
 
-	// TODO: Bind to all available sockets...
+	FD_ZERO(&snpp_sock);
+	FD_ZERO(&snpp_newconn);
+	snpp_fdmax = -1;
+
+	// Bind and listen on all available sockets for new connections
 	for (nextif = svrif; nextif != NULL; nextif = nextif->ai_next) {
-		snpp_sock = socket(nextif->ai_family, nextif->ai_socktype,
+		int new_sock = socket(nextif->ai_family, nextif->ai_socktype,
 				nextif->ai_protocol);
-		if (snpp_sock == -1) {
-			syslog(LOG_ERR, "Failed to create socket");
+		if (new_sock == -1) {
+			syslog(LOG_NOTICE, "Failed to create socket");
 			continue;
 		}
 		
-		rc = setsockopt(snpp_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+		rc = setsockopt(new_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 		if (rc == -1) {
 			perror("setsockopt");
 			exit(EXIT_FAILURE);
 		}
 
-		rc = bind(snpp_sock, nextif->ai_addr, nextif->ai_addrlen);
+		// Remove IPv4 binding from v6 socket
+		if (nextif->ai_family == AF_INET6) { 
+			rc = setsockopt(new_sock, IPPROTO_IPV6, 
+					IPV6_V6ONLY, &yes, sizeof(int));
+			if (rc == -1) {
+				perror("setsockopt");
+				exit(EXIT_FAILURE);
+			}
+		}
+
+
+		rc = bind(new_sock, nextif->ai_addr, nextif->ai_addrlen);
 		if (rc == -1) {
-			close(snpp_sock);
+			close(new_sock);
+			perror("bind");
 			syslog(LOG_ERR, "Failed to bind to socket");
 			continue;
 		}
 
-		break;
+		rc = listen(new_sock, 10); // Backlog of 10
+		if (rc == -1) {
+			perror("listen");
+			exit(EXIT_FAILURE);
+		}
+
+		FD_SET(new_sock, &snpp_sock);
+		if (snpp_fdmax < new_sock) {
+			snpp_fdmax = new_sock;
+		}
 	}	
 
-	if (nextif == NULL) {
+	if (snpp_fdmax < 0) {
 		syslog(LOG_ERR, "Failed to bind to any socket");
 		exit(EXIT_FAILURE);
 	}
 
 	freeaddrinfo(svrif);
 
-	rc = listen(snpp_sock, 10); // Backlog of 10
-	if (rc == -1) {
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
 
 	syslog(LOG_DEBUG, "Waiting for SNPP client connections");
 
 	while (1) {
-		struct sockaddr_storage client_addr;
-		int sin_size = sizeof(client_addr);
-		int client_fd;
-
-		client_fd = accept(snpp_sock, (struct sockaddr*)&client_addr, &sin_size);
-		if (client_fd == -1) {
-			syslog(LOG_ERR, "SNPP accept failure");
-			continue;
-		}
-
-		char buf[INET6_ADDRSTRLEN];
-
-		inet_ntop(client_addr.ss_family, 
-				get_in_addr((struct sockaddr*)&client_addr),
-					buf, sizeof(buf));
-
-		syslog(LOG_DEBUG, "New SNPP connection from %s", buf);
-
-		rc = send(client_fd, "421 SNPP (V0) Gateway Ready\r\n", 29, 0);
+		snpp_newconn = snpp_sock;
+		rc = select(snpp_fdmax + 1, &snpp_newconn, NULL, NULL, NULL);
 		if (rc == -1) {
-			perror("send");
-			close(client_fd);
+			syslog(LOG_ERR, "Select() failure in SNPP_listen()");
 			exit(EXIT_FAILURE);
 		}
 
-		close(client_fd);
+		for (i = 0; i <= snpp_fdmax; i++) {
+			if (!FD_ISSET(i, &snpp_newconn))
+				continue;
+
+			struct sockaddr_storage client_addr;
+			int sas_size = sizeof(client_addr);
+			int client_fd;
+
+			client_fd = accept(i, (struct sockaddr*)&client_addr, &sas_size);
+			if (client_fd == -1) {
+				syslog(LOG_ERR, "SNPP accept failure");
+				continue;
+			}
+
+
+			// Spawn new thread to handle new connection
+			char buf[INET6_ADDRSTRLEN];
+
+			inet_ntop(client_addr.ss_family, 
+					get_in_addr((struct sockaddr*)&client_addr),
+						buf, sizeof(buf));
+
+			syslog(LOG_DEBUG, "New SNPP connection from %s", buf);
+
+			rc = send(client_fd, "421 SNPP (V0) Gateway Ready\r\n", 29, 0);
+			if (rc == -1) {
+				perror("send");
+				close(client_fd);
+				exit(EXIT_FAILURE);
+			}
+
+			close(client_fd);
+		}
 	}
 }

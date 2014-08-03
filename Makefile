@@ -2,9 +2,9 @@ PREFIX = /usr/local
 
 LDLIBS = -lpthread
 
-SRCS = kwfsnppd.c
+SRCS = kwfsnppd.c util.c
 
-OBJS = kwfsnppd.o
+OBJS = kwfsnppd.o util.o
 
 kwfsnppd: $(OBJS)
 	$(CC) -o kwfsnppd $(OBJS) $(LDLIBS)

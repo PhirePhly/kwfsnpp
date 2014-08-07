@@ -23,7 +23,7 @@
 
 void snpp_listen () {
 	int rc, i, yes = 1;
-	fd_set snpp_sock, snpp_newconn;
+	fd_set snpp_sock;
 	int snpp_fdmax;
 	struct addrinfo hints, *svrif, *nextif;
 
@@ -41,7 +41,6 @@ void snpp_listen () {
 	}
 
 	FD_ZERO(&snpp_sock);
-	FD_ZERO(&snpp_newconn);
 	snpp_fdmax = -1;
 
 	// Bind and listen on all available sockets for new connections
@@ -100,7 +99,7 @@ void snpp_listen () {
 	syslog(LOG_DEBUG, "Waiting for SNPP client connections");
 
 	while (1) {
-		snpp_newconn = snpp_sock;
+		fd_set snpp_newconn = snpp_sock;
 		rc = select(snpp_fdmax + 1, &snpp_newconn, NULL, NULL, NULL);
 		if (rc == -1) {
 			syslog(LOG_ERR, "Select() failure in SNPP_listen()");
@@ -130,7 +129,6 @@ void snpp_listen () {
 			ptarg->fd = client_fd;
 			memcpy(&(ptarg->addr), &client_addr, 
 					sizeof(struct sockaddr_storage));
-			ptarg->mess_queue = -1;
 
 			pthread_create(&tclient, NULL, snpp_client, (void*) ptarg);
 			pthread_detach(tclient);

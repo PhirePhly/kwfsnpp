@@ -14,11 +14,13 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #include "kwfsnppd.h"
+#include "snpp.h"
 #include "util.h"
 
 void snpp_listen () {
@@ -143,22 +145,50 @@ static void * snpp_client(void *arg) {
 	memcpy(&snppstate, arg, sizeof(struct snpp_state));
 	free(arg);
 
+	struct recvline_state rcvrbuf;
+	memset(&rcvrbuf, 0, sizeof(struct recvline_state));
+	rcvrbuf.fd = snppstate.fd;
 
-	char buf[INET6_ADDRSTRLEN];
+	char buf[BUFFER_LEN];
 
-	inet_ntop(snppstate.addr.ss_family, 
-			get_in_addr((struct sockaddr*)&(snppstate.addr)),
-				buf, sizeof(buf));
-
+	get_addr_str(buf, sizeof(buf), (struct sockaddr*) &(snppstate.addr));
 	syslog(LOG_DEBUG, "New SNPP connection from %s", buf);
 
-	rc = send(snppstate.fd, "421 SNPP (V0) Gateway Ready\r\n", 29, 0);
+	snprintf(buf, sizeof(buf), "%s", SNPP_HELLO);
+	rc = nsend(snppstate.fd, buf, strlen(buf));
 	if (rc == -1) {
-		perror("send");
-		close(snppstate.fd);
-		pthread_exit(NULL);
+		goto cleanup;
 	}
 
+	while (1) {
+		fd_set snpp_client;
+		FD_ZERO(&snpp_client);
+		FD_SET(snppstate.fd, &snpp_client);
+		struct timeval timeout;
+		timeout.tv_sec = svrstate.snpp_timeout;
+		timeout.tv_usec = 0;
+		rc = select(snppstate.fd+1, &snpp_client, NULL, NULL, &timeout);
+
+		if (rc == 0) {
+			snprintf(buf, sizeof(buf), "%s", SNPP_TIMEOUT);
+			nsend(snppstate.fd, buf, strlen(buf));
+			goto cleanup;
+		}
+
+		char *line;
+		while (rc = recvline(&rcvrbuf, &line)) {
+			if (rc == -1) goto cleanup;
+
+			// Process each line from client
+			printf("New line (%d): %s\n", rc, line);
+		}
+	}
+
+cleanup:
+	get_addr_str(buf, sizeof(buf), (struct sockaddr*) &(snppstate.addr));
+	syslog(LOG_DEBUG, "Closing SNPP connection from %s", buf);
+
 	close(snppstate.fd);
+	return NULL;
 
 }

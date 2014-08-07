@@ -9,15 +9,27 @@
 
 #include "util.h"
 
-// Extracts IP addr buried in struct sockaddr (thanks Beej)
-void *get_in_addr(struct sockaddr *sa) {
+// Converts sockaddr into a string. 
+// 	buf should be at least INET6_ADDRSTRLEN long.
+int get_addr_str(char *buf, size_t len, struct sockaddr *sa) {
+	struct sockaddr *addr;
+
 	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*)sa)->sin_addr);
+		addr = (struct sockaddr*) &(((struct sockaddr_in*)sa)->sin_addr);
+	} else {
+		addr = (struct sockaddr*) &(((struct sockaddr_in6*)sa)->sin6_addr);
 	}
 
-	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+	inet_ntop(sa->sa_family, addr, buf, len);
+	return 0;
 }
 
+// recvline - returns a single line at a time for processing
+// from a socket file desc.
+//
+// Returns 1 and sets **next to point to \0-terminated line
+// Returns 0 when there are no available lines
+// Returns -1 when there are socket problems or user input is too long
 int recvline(struct recvline_state *s, char **next) {
 	int rc, i;
 
@@ -70,5 +82,27 @@ int recvline(struct recvline_state *s, char **next) {
 	}
 
 	return 1;
+}
+
+// Wrapper around send() to handle any recoverable errors
+int nsend(int fd, const char *buf, size_t len) {
+	int rc;
+
+	while (len > 0) {
+		rc = send(fd, buf, len, 0);
+
+		if (rc == -1) {
+			if (errno == EAGAIN || errno == EINTR) {
+				continue;
+			} else {
+				return -1;
+			}
+		}
+
+		buf += rc;
+		len -= rc;
+	}
+
+	return 0;
 }
 

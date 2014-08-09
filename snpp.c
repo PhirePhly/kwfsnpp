@@ -182,6 +182,22 @@ static void * snpp_client(void *arg) {
 
 			// Process each line from client
 			printf("New line (%d): %s\n", rc, line);
+
+			if (strncasecmp(line, "QUIT", 4) == 0) {
+				snprintf(buf, sizeof(buf), "%s", SNPP_GOODBYE);
+				nsend(snppstate.fd, buf, strlen(buf));
+				goto cleanup;
+			}
+
+			else if (strncasecmp(line, "PAGE", 4) == 0) {
+				snprintf(buf, sizeof(buf), "%s", SNPP_NOTIMPL);
+				nsend(snppstate.fd, buf, strlen(buf));
+			}
+
+			else if (strlen(line) >= 4) { // Any command we don't understand
+				snprintf(buf, sizeof(buf), "%s", SNPP_NOTIMPL);
+				nsend(snppstate.fd, buf, strlen(buf));
+			}
 		}
 	}
 
@@ -193,3 +209,4 @@ cleanup:
 	return NULL;
 
 }
+

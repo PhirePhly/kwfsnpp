@@ -116,7 +116,8 @@ void snpp_listen () {
 			int sas_size = sizeof(client_addr);
 			int client_fd;
 
-			client_fd = accept(i, (struct sockaddr*)&client_addr, &sas_size);
+			client_fd = accept(i, (struct sockaddr*)&client_addr, 
+					(socklen_t *) &sas_size);
 			if (client_fd == -1) {
 				syslog(LOG_ERR, "SNPP accept failure");
 				continue;
@@ -176,7 +177,7 @@ static void * snpp_client(void *arg) {
 		}
 
 		char *line;
-		while (rc = recvline(&rcvrbuf, &line)) {
+		while ((rc = recvline(&rcvrbuf, &line))) {
 			if (rc == -1) goto cleanup;
 
 			// Process each line from client

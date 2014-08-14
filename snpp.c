@@ -46,6 +46,7 @@ void snpp_listen () {
 	snpp_fdmax = -1;
 
 	// Bind and listen on all available sockets for new connections
+	// This will generally be two sockets: IPv4 and IPv6
 	for (nextif = svrif; nextif != NULL; nextif = nextif->ai_next) {
 		int new_sock = socket(nextif->ai_family, nextif->ai_socktype,
 				nextif->ai_protocol);
@@ -124,7 +125,8 @@ void snpp_listen () {
 			}
 
 
-			// Spawn new thread to handle new connection
+			// Spawn thread to handle new connection
+			// TODO: Rate limit clients? DoS vector
 			pthread_t tclient;
 
 			struct snpp_state *ptarg = (struct snpp_state*)
@@ -171,7 +173,7 @@ static void * snpp_client(void *arg) {
 		rc = select(snppstate.fd+1, &snpp_client, NULL, NULL, &timeout);
 
 		if (rc == 0) {
-			snprintf(buf, sizeof(buf), "%s", SNPP_TIMEOUT);
+			snprintf(buf, sizeof(buf), "%s", SNPP_ERR_TIMEOUT);
 			nsend(snppstate.fd, buf, strlen(buf));
 			goto cleanup;
 		}
@@ -183,19 +185,26 @@ static void * snpp_client(void *arg) {
 			// Process each line from client
 			printf("New line (%d): %s\n", rc, line);
 
-			if (strncasecmp(line, "QUIT", 4) == 0) {
+			if (strncasecmp(line, "PAGE", 4) == 0) {
+				char *arg = find_argument(line);
+				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
+				nsend(snppstate.fd, buf, strlen(buf));
+			}
+
+			else if (strncasecmp(line, "MESS", 4) == 0) {
 				snprintf(buf, sizeof(buf), "%s", SNPP_GOODBYE);
 				nsend(snppstate.fd, buf, strlen(buf));
 				goto cleanup;
 			}
 
-			else if (strncasecmp(line, "PAGE", 4) == 0) {
-				snprintf(buf, sizeof(buf), "%s", SNPP_NOTIMPL);
+			else if (strncasecmp(line, "QUIT", 4) == 0) {
+				snprintf(buf, sizeof(buf), "%s", SNPP_GOODBYE);
 				nsend(snppstate.fd, buf, strlen(buf));
+				goto cleanup;
 			}
 
 			else if (strlen(line) >= 4) { // Any command we don't understand
-				snprintf(buf, sizeof(buf), "%s", SNPP_NOTIMPL);
+				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
 		}

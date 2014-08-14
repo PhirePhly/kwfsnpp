@@ -16,6 +16,11 @@ struct recvline_state {
 // Return lines from recvline_state.fd one line at a time
 int recvline(struct recvline_state *s, char **next);
 
+// Run through a string to find the second word after whitespace
+// "example string" "badexample"
+//          ^                  ^
+char *find_argument(char *line);
+
 // Wrapper for send() for recoverable errors
 int nsend(int fd, const char *buf, size_t len);
 

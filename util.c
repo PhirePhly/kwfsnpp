@@ -1,6 +1,7 @@
 // Useful utility functions 
 // Kenneth Finnegan, 2014
 
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -75,7 +76,8 @@ int recvline(struct recvline_state *s, char **next) {
 	s->start_offset = i + 1;
 
 	while (s->start_offset < s->end_offset) {
-		if (s->buf[s->start_offset] == '\n' || s->buf[s->start_offset] == '\r') {
+		if (s->buf[s->start_offset] == '\n' || 
+				s->buf[s->start_offset] == '\r') {
 			s->start_offset++;
 		} else {
 			break;
@@ -83,6 +85,18 @@ int recvline(struct recvline_state *s, char **next) {
 	}
 
 	return 1;
+}
+
+// Run through a string to find the second word after whitespace
+// "example string" "badexample"
+//          ^                  ^
+char *find_argument(char *line) {
+
+	while (*line != '\0' && !isspace(*line))
+		line++;
+
+	while (*line != '\0' && isspace(*line))
+		line++;
 }
 
 // Wrapper around send() to handle any recoverable errors

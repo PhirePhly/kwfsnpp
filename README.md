@@ -20,14 +20,15 @@ SNPP Verbs include:
  * HELP - Print something helpful
 
 Client Examples:
-	$ telnet snpp.thelifeofkenneth.com 444
-<--	220 SNPP APRS Gateway Ready
--->	PAGE W6KWF-5
-<--	250 APRS ID Accepted
--->	MESS Call Sean on W6BHZ/R
-<--	250 Message OK
--->	SEND
-<--	250 Message Sent
--->	QUIT
-<--	221 Goodbye!
+
+		$ telnet snpp.thelifeofkenneth.com 444
+	<--	220 SNPP APRS Gateway Ready
+	-->	PAGE W6KWF-5
+	<--	250 APRS ID Accepted
+	-->	MESS Call Sean on W6BHZ/R
+	<--	250 Message OK
+	-->	SEND
+	<--	250 Message Sent
+	-->	QUIT
+	<--	221 Goodbye!
 

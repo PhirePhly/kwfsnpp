@@ -121,3 +121,33 @@ int nsend(int fd, const char *buf, size_t len) {
 	return 0;
 }
 
+// Check if is valid callsign per APRS-IS
+int qualify_callsign (char *call) {
+	int len = strlen(call);
+	if (len < 3)
+		return -1;
+	if (len > 9)
+		return -1;
+
+	// Rule out invalid callsigns and ones we aren't willing to handle
+	if (strncasecmp(call, "N0CALL", 6) == 0)
+		return -1;
+	if (strncasecmp(call, "NOCALL", 6) == 0)
+		return -1;
+	if (strncasecmp(call, "MYCALL", 6) == 0)
+		return -1;
+	if (strncasecmp(call, "BLN", 3) == 0)
+		return 1;
+
+	return 0;
+}
+
+// space-pad a 9 character callsign and add :xx: wrapper
+int pad_callsign (char *target, char *input) {
+	if (strlen(input) > 9)
+		return -1;
+
+	sprintf(target, ":         :");
+	memcpy(target+1, input, strlen(input));
+	return 0;
+}

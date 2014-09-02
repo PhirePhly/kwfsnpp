@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -97,6 +98,8 @@ char *find_argument(char *line) {
 
 	while (*line != '\0' && isspace(*line))
 		line++;
+
+	return line;
 }
 
 // Wrapper around send() to handle any recoverable errors

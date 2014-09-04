@@ -146,13 +146,15 @@ int qualify_callsign (char *call) {
 }
 
 // Check a message to see if it is a valid APRS message
-int quality_message(char *mess) {
+int qualify_message(char *mess) {
 	// Is the message too long?
 	if (strlen(mess) > 67) {
 		return -1;
 	}
 	// Are there any unprintable ASCII charaters?
+	// TODO
 	// Are there any disallowed characters? '{','|','~'
+	// TODO
 	return 0;
 }
 

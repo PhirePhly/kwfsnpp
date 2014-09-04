@@ -29,6 +29,8 @@ int nsend(int fd, const char *buf, size_t len);
 // Returns -1 if that isn't the case
 int qualify_callsign(char *call);
 
+int qualify_message(char *mess);
+
 // Pads a callsign out to the 9 characters and ::'s required by APRS
 int pad_callsign(char *target, char *input);
 

@@ -214,8 +214,22 @@ static void * snpp_client(void *arg) {
 			}
 
 			else if (strncasecmp(line, "MESS", 4) == 0) {
+				if (strlen(nextmess) > 0) {
+					snprintf(buf, sizeof(buf), "%s", SNPP_MAXENTRY);
+					nsend(snppstate.fd, buf, strlen(buf));
+					continue;
+				}
+
 				char *arg = find_argument(line);
-				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
+				rc = qualify_message(arg);
+				if (rc != 0) {
+					snprintf(buf, sizeof(buf), "%s", SNPP_MESS_BAD);
+					nsend(snppstate.fd, buf, strlen(buf));
+					continue;
+				}
+
+				snprintf(nextmess, MESS_LEN, "%s", arg);
+				snprintf(buf, sizeof(buf), "%s", SNPP_MESS_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
 
@@ -227,7 +241,19 @@ static void * snpp_client(void *arg) {
 			}
 
 			else if (strncasecmp(line, "SEND", 4) == 0) {
-				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
+				if ( (strlen(nextcall) == 0) || 
+						(strlen(nextmess) == 0) ) {
+					snprintf(buf, sizeof(buf), "%s", SNPP_ERR_MISSING);
+					nsend(snppstate.fd, buf, strlen(buf));
+					continue;
+				}
+
+				printf("Send: %s:%s\n", nextcall, nextmess);
+
+				memset(nextcall, 0, sizeof(nextcall));
+				memset(nextmess, 0, sizeof(nextmess));
+
+				snprintf(buf, sizeof(buf), "%s", SNPP_SENT);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
 

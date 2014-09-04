@@ -19,6 +19,12 @@ struct SVRSTATE {
 	char *aprsis_port;
 	char *aprsis_user;
 	char *aprsis_pass;
+
+	struct {
+		pthread_mutex_t mutex;
+		struct message_t *head;
+		uint16_t nextid;
+	} messqueue;
 } svrstate;
 
 // Per-client SNPP server state
@@ -36,6 +42,8 @@ enum mess_state {
 
 // Queued message context
 struct message_t {
+	struct message_t *next;
+
 	enum mess_state state;
 	time_t next_try;
 	int send_count;
@@ -46,6 +54,11 @@ struct message_t {
 void snpp_listen(void);
 static void *snpp_client(void *arg);
 
+// APRS-IS public & private functions
 void aprsis_start(void);
 static void *aprsis_client(void *arg);
+int aprsis_connect(void);
+int aprsis_createmess(char *call, char *mess);
+int aprsis_enqueue(struct message_t *newmess);
+int aprsis_checkqueue(void);
 

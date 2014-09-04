@@ -4,7 +4,8 @@
 #define APRSIDENT	"APZKWF"
 #define SNPPDVERS	"kwfsnppd 0.0"
 
-#define CALL_LEN	10
+#define CALL_LEN	9
+#define MESS_LEN	67
 
 // Global daemon state
 struct SVRSTATE {
@@ -24,6 +25,22 @@ struct SVRSTATE {
 struct snpp_state {
 	int fd; // Client's socket file descriptor
 	struct sockaddr_storage addr;
+};
+
+// State machine for each queued message
+enum mess_state {
+	START,
+	RETRY,
+	ACKED
+};
+
+// Queued message context
+struct message_t {
+	enum mess_state state;
+	time_t next_try;
+	int send_count;
+	char call[CALL_LEN+1];
+	char mess[MESS_LEN+1];
 };
 
 void snpp_listen(void);

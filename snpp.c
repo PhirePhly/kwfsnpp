@@ -141,9 +141,17 @@ void snpp_listen () {
 	}
 }
 
+// Handle a single client connection and enqueue any entered messages
+// arg - struct snpp_state containing opened socket to client
 static void * snpp_client(void *arg) {
 	int rc;
+	char buf[BUFFER_LEN];
+	char nextcall[CALL_LEN+1];
+	char nextmess[MESS_LEN+1];
+	memset(nextcall, 0, sizeof(nextcall));
+	memset(nextmess, 0, sizeof(nextmess));
 
+	// Copy everything onto the local stack
 	struct snpp_state snppstate;
 	memcpy(&snppstate, arg, sizeof(struct snpp_state));
 	free(arg);
@@ -151,8 +159,6 @@ static void * snpp_client(void *arg) {
 	struct recvline_state rcvrbuf;
 	memset(&rcvrbuf, 0, sizeof(struct recvline_state));
 	rcvrbuf.fd = snppstate.fd;
-
-	char buf[BUFFER_LEN];
 
 	get_addr_str(buf, sizeof(buf), (struct sockaddr*) &(snppstate.addr));
 	syslog(LOG_DEBUG, "New SNPP connection from %s", buf);
@@ -172,12 +178,15 @@ static void * snpp_client(void *arg) {
 		timeout.tv_usec = 0;
 		rc = select(snppstate.fd+1, &snpp_client, NULL, NULL, &timeout);
 
+		// Client took too long to enter anything; time them out
 		if (rc == 0) {
 			snprintf(buf, sizeof(buf), "%s", SNPP_ERR_TIMEOUT);
 			nsend(snppstate.fd, buf, strlen(buf));
 			goto cleanup;
 		}
 
+		// Process any lines they entered; 
+		// possibly several if they are a batch process
 		char *line;
 		while ((rc = recvline(&rcvrbuf, &line))) {
 			if (rc == -1) goto cleanup;
@@ -186,15 +195,40 @@ static void * snpp_client(void *arg) {
 			printf("New line (%d): %s\n", rc, line);
 
 			if (strncasecmp(line, "PAGE", 4) == 0) {
+				if (strlen(nextcall) > 0) {
+					snprintf(buf, sizeof(buf), "%s", SNPP_MAXENTRY);
+					nsend(snppstate.fd, buf, strlen(buf));
+					continue;
+				}
+
+				char *arg = find_argument(line);
+				rc = qualify_callsign(arg);
+				if (rc != 0) {
+					snprintf(buf, sizeof(buf), "%s", SNPP_ID_BAD);
+					nsend(snppstate.fd, buf, strlen(buf));
+					continue;
+				}
+				snprintf(nextcall, CALL_LEN, "%s", arg);
+				snprintf(buf, sizeof(buf), "%s", SNPP_ID_OK);
+				nsend(snppstate.fd, buf, strlen(buf));
+			}
+
+			else if (strncasecmp(line, "MESS", 4) == 0) {
 				char *arg = find_argument(line);
 				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
 
-			else if (strncasecmp(line, "MESS", 4) == 0) {
-				snprintf(buf, sizeof(buf), "%s", SNPP_GOODBYE);
+			else if (strncasecmp(line, "RESEt", 4) == 0) {
+				memset(nextcall, 0, sizeof(nextcall));
+				memset(nextmess, 0, sizeof(nextmess));
+				snprintf(buf, sizeof(buf), "%s", SNPP_RESET_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
-				goto cleanup;
+			}
+
+			else if (strncasecmp(line, "SEND", 4) == 0) {
+				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
+				nsend(snppstate.fd, buf, strlen(buf));
 			}
 
 			else if (strncasecmp(line, "QUIT", 4) == 0) {
@@ -203,7 +237,13 @@ static void * snpp_client(void *arg) {
 				goto cleanup;
 			}
 
-			else if (strlen(line) >= 4) { // Any command we don't understand
+			else if (strncasecmp(line, "HELP", 4) == 0) {
+				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
+				nsend(snppstate.fd, buf, strlen(buf));
+			}
+
+			// Any command we don't understand
+			else if (strlen(line) >= 4) { 
 				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}

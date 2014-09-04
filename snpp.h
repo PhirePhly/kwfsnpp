@@ -10,6 +10,7 @@
 #define SNPP_MESS_OK	"250 Message OK\r\n"
 #define SNPP_MESS_BAD	"550 Message length exceeded\r\n"
 #define SNPP_MAXENTRY	"552 Maximum Entries Exceeded\r\n"
+#define SNPP_RESET_OK	"250 Reset OK\r\n"
 #define SNPP_SENT		"250 Message(s) Sent\r\n"
 
 #define SNPP_ERR_TIMEOUT	"421 Idle timeout; Goodbye!\r\n"

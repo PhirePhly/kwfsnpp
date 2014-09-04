@@ -89,8 +89,8 @@ int recvline(struct recvline_state *s, char **next) {
 }
 
 // Run through a string to find the second word after whitespace
-// "example string" "badexample"
-//          ^                  ^
+// "example string" "badexample" "another example string"
+//          ^                  ^          ^
 char *find_argument(char *line) {
 
 	while (*line != '\0' && !isspace(*line))
@@ -142,6 +142,17 @@ int qualify_callsign (char *call) {
 	if (strncasecmp(call, "BLN", 3) == 0)
 		return 1;
 
+	return 0;
+}
+
+// Check a message to see if it is a valid APRS message
+int quality_message(char *mess) {
+	// Is the message too long?
+	if (strlen(mess) > 67) {
+		return -1;
+	}
+	// Are there any unprintable ASCII charaters?
+	// Are there any disallowed characters? '{','|','~'
 	return 0;
 }
 

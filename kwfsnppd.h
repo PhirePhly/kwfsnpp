@@ -49,6 +49,7 @@ struct message_t {
 	int send_count;
 	char call[CALL_LEN+1];
 	char mess[MESS_LEN+1];
+	uint16_t id;
 };
 
 void snpp_listen(void);
@@ -60,5 +61,5 @@ static void *aprsis_client(void *arg);
 int aprsis_connect(void);
 int aprsis_createmess(char *call, char *mess);
 int aprsis_enqueue(struct message_t *newmess);
-int aprsis_checkqueue(void);
+struct message_t *aprsis_popqueue(void);
 

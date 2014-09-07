@@ -192,8 +192,6 @@ static void * snpp_client(void *arg) {
 			if (rc == -1) goto cleanup;
 
 			// Process each line from client
-			printf("New line (%d): %s\n", rc, line);
-
 			if (strncasecmp(line, "PAGE", 4) == 0) {
 				if (strlen(nextcall) > 0) {
 					snprintf(buf, sizeof(buf), "%s", SNPP_MAXENTRY);
@@ -248,7 +246,8 @@ static void * snpp_client(void *arg) {
 					continue;
 				}
 
-				printf("Send: %s:%s\n", nextcall, nextmess);
+				printf("SNPP Send: %s:%s\n", nextcall, nextmess);
+				aprsis_createmess(nextcall, nextmess);
 
 				memset(nextcall, 0, sizeof(nextcall));
 				memset(nextmess, 0, sizeof(nextmess));

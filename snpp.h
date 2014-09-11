@@ -11,10 +11,10 @@
 #define SNPP_MESS_BAD	"550 Message length/contents invalid\r\n"
 #define SNPP_MAXENTRY	"552 Maximum Entries Exceeded\r\n"
 #define SNPP_RESET_OK	"250 Reset OK\r\n"
-#define SNPP_SENT		"250 Message(s) Sent\r\n"
+#define SNPP_SENT		"250 Message Queued for Delivery\r\n"
 
 #define SNPP_ERR_TIMEOUT	"421 Idle timeout; Goodbye!\r\n"
 #define SNPP_ERR_TOOMANY	"421 Too Many Errors; Goodbye!\r\n"
-#define SNPP_ERR_NOTIMPL	"500 Command not implemented\r\n"
+#define SNPP_ERR_NOTIMPL	"500 Command not valid or implemented\r\n"
 #define SNPP_ERR_MISSING	"503 Error: Pager or Message Missing\r\n"
 

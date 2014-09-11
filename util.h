@@ -34,3 +34,6 @@ int qualify_message(char *mess);
 // Pads a callsign out to the 9 characters and ::'s required by APRS
 int pad_callsign(char *target, char *input);
 
+// Given an integer, dither it between 100% and 112% its value
+int about(int value);
+

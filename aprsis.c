@@ -42,16 +42,20 @@ static void * aprsis_client(void *arg) {
 	aprsis_connect();
 
 	while (1) {
-		sleep(5);
+		sleep(1);
 		struct message_t *newmess;
-tryagain:
-		newmess = aprsis_popqueue();
-
-		if (newmess != NULL) {
+		
+		while ((newmess = aprsis_popqueue()) != NULL) {
 			printf("%s: %s {%04X\n", newmess->call, newmess->mess,
 					newmess->id);
-			free(newmess);
-			goto tryagain;
+
+			newmess->send_count++;
+			newmess->next_try = time(NULL) + about(30*newmess->send_count);
+			if (newmess->send_count < 10) {
+				aprsis_enqueue(newmess);
+			} else {
+				free(newmess);
+			}
 		}
 	}
 	return NULL;
@@ -66,7 +70,7 @@ int aprsis_connect(void) {
 	// Login to connected server
 	// send "user %s pass %s vers SNPPDVERS"
 	
-	return -1;
+	return 0;
 }
 
 int aprsis_createmess(char *call, char *mess) {

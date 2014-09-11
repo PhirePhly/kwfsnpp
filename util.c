@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -167,3 +168,10 @@ int pad_callsign (char *target, char *input) {
 	memcpy(target+1, input, strlen(input));
 	return 0;
 }
+
+// Given a value, dither it between 100% and 112% its value
+int about(int value) {
+	value += random() % (value / 8);
+	return value;
+}
+

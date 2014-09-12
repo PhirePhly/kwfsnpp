@@ -1,6 +1,9 @@
 // Useful utility functions
 // Kenneth Finnegan, 2014
 
+#ifndef _UTIL_H_
+#define _UTIL_H_
+
 #define BUFFER_LEN	2048
 #define CALLSIGN_LEN	(9+2+1)
 
@@ -36,4 +39,6 @@ int pad_callsign(char *target, char *input);
 
 // Given an integer, dither it between 100% and 112% its value
 int about(int value);
+
+#endif
 

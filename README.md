@@ -20,7 +20,6 @@ SNPP Verbs include:
  * HELP - Print something helpful
 
 Client Examples:
-
 		$ telnet snpp.thelifeofkenneth.com 444
 	<--	220 SNPP APRS Gateway Ready
 	-->	PAGE W6KWF-5

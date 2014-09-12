@@ -28,7 +28,7 @@ int main (int argc, char **argv) {
 	// Defaults
 	svrstate.snpp_port = "444";
 	svrstate.snpp_timeout = 300;
-	svrstate.mess_queue = "/tmp/kwfsnppd";
+	svrstate.mess_max_retry = 10;
 	svrstate.aprsis_svr = "noam.aprs2.net";
 	svrstate.aprsis_port = "14580";
 	svrstate.aprsis_user = NULL;

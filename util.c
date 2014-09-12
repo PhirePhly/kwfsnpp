@@ -127,6 +127,7 @@ int nsend(int fd, const char *buf, size_t len) {
 
 // Check if is valid callsign per APRS-IS
 int qualify_callsign (char *call) {
+	int i;
 	int len = strlen(call);
 	if (len < 3)
 		return -1;
@@ -143,6 +144,9 @@ int qualify_callsign (char *call) {
 	if (strncasecmp(call, "BLN", 3) == 0)
 		return 1;
 
+	for (i=0; i< len; i++) {
+		call[i] = toupper(call[i]);
+	}
 	return 0;
 }
 

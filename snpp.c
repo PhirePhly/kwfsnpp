@@ -263,8 +263,7 @@ static void * snpp_client(void *arg) {
 			}
 
 			else if (strncasecmp(line, "HELP", 4) == 0) {
-				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
-				nsend(snppstate.fd, buf, strlen(buf));
+				snpp_send_help(snppstate.fd);
 			}
 
 			// Any command we don't understand
@@ -282,5 +281,23 @@ cleanup:
 	close(snppstate.fd);
 	return NULL;
 
+}
+
+void snpp_send_help(int fd) {
+	char *helptext[] = {"214 KWFSNPPd Simple Network Paging Protocol daemon\r\n",
+		"214 Commands are:\r\n",
+		"214   PAGEr CALLSIGN - Identify pager for next message\r\n",
+		"214   MESSage message contents - Short one-way message\r\n",
+		"214   RESEt - Dump the pending message and start over\r\n",
+		"214   SEND - Pass the entered message to the APRS-IS system\r\n",
+		"214   QUIT - Terminate current session\r\n",
+		"250 Ready for next command...\r\n"};
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		nsend(fd, helptext[i], strlen(helptext[i]));
+	}
+
+	return;
 }
 

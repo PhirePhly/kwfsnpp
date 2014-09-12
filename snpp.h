@@ -18,3 +18,5 @@
 #define SNPP_ERR_NOTIMPL	"500 Command not valid or implemented\r\n"
 #define SNPP_ERR_MISSING	"503 Error: Pager or Message Missing\r\n"
 
+void snpp_send_help(int fd);
+

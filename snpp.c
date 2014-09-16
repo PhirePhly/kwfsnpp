@@ -170,6 +170,7 @@ static void * snpp_client(void *arg) {
 	}
 
 	while (1) {
+		printf("snpp loop\n");
 		fd_set snpp_client;
 		FD_ZERO(&snpp_client);
 		FD_SET(snppstate.fd, &snpp_client);
@@ -188,8 +189,10 @@ static void * snpp_client(void *arg) {
 		// Process any lines they entered; 
 		// possibly several if they are a batch process
 		char *line;
+		int linecount = 0;
 		while ((rc = recvline(&rcvrbuf, &line))) {
-			if (rc == -1) goto cleanup;
+			if (rc == -1) goto cleanup; // Something went wrong
+			linecount++;
 
 			// Process each line from client
 			if (strncasecmp(line, "PAGE", 4) == 0) {
@@ -271,6 +274,10 @@ static void * snpp_client(void *arg) {
 				snprintf(buf, sizeof(buf), "%s", SNPP_ERR_NOTIMPL);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
+		}
+
+		if (linecount == 0) {
+			goto cleanup;
 		}
 	}
 

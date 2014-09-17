@@ -1,7 +1,7 @@
 // snpp.h
 // Kenneth Finnegan, 2014
 
-#define SNPP_HELLO		"220 SNPP APRS Gateway Ready\r\n"
+#define SNPP_HELLO		"214 Type HELP for more info\r\n250 SNPP APRS Gateway Ready\r\n"
 #define SNPP_GOODBYE	"221 Goodbye!\r\n"
 #define SNPP_GATEDOWN	"421 Gateway Service Unavailable\r\n"
 

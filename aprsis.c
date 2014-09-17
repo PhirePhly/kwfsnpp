@@ -56,11 +56,12 @@ static void * aprsis_client(void *arg) {
 // Failing to authenticate is a fatal error
 int aprsis_connect(void) {
 	int rc, newfd;
-	syslog(LOG_DEBUG, "(Not actually) Connecting to APRS-IS server: %s:%s", 
+	syslog(LOG_DEBUG, "Connecting to APRS-IS server: %s:%s", 
 			svrstate.aprsis_svr, svrstate.aprsis_port);
 
 	if (svrstate.aprsis_fd != 0) {
 		close (svrstate.aprsis_fd);
+		svrstate.aprsis_fd = 0;
 	}
 
 	struct addrinfo hints, *aprssvr, *p;
@@ -112,7 +113,7 @@ int aprsis_connect(void) {
 // Process incoming packets from the APRS-IS server
 int aprsis_rcvr(void) {
 	int rc;
-	char *line, *infofld;
+	char *line;
 
 	while ((rc = recvline(&(svrstate.aprsis_buf), &line))) {
 		if (rc == -1) {
@@ -125,29 +126,28 @@ int aprsis_rcvr(void) {
 			continue;
 		}
 
-		infofld = strchr(line, ':');
-		if (infofld == NULL) { // No info field?
+		struct tnc2_message mess;
+		rc = tnc2_parse(&mess, line);
+		if (rc == -1)
 			continue;
-		}
-		if (strlen(infofld) < 2) { // No APRS field ident?
-			continue;
-		}
-		if (infofld[1] != ':') { // Not a message packet
+
+		if (mess.info[0] != ':') { // Not a message packet
 			continue;
 		}
 
 		char smallbuf[1024];
 		pad_callsign(smallbuf, svrstate.aprsis_user);
-		if (strncasecmp(infofld + 1, smallbuf, 11) != 0) { // Message not to us!
+		if (strncasecmp(mess.info, smallbuf, 11) != 0) { // Message not to us!
 			continue;
 		}
 		// "::         :ack0000
-		if (strncasecmp(infofld + 12, "ack", 3) == 0 ||
-				strncasecmp(line + 12, "rej", 3) == 0) { // They're acking...
+		if (strncasecmp(mess.info + 11, "ack", 3) == 0 ||
+				strncasecmp(mess.info + 11, "rej", 3) == 0) { // an Ack to us
 			unsigned int messid;
-			rc = sscanf(infofld + 15, "%x", &messid);
+			rc = sscanf(mess.info + 14, "%x", &messid);
 			printf("Ack for mess #%04X\n", messid);
 			
+			pthread_mutex_lock(&(svrstate.messqueue.mutex));
 			struct message_t *p = svrstate.messqueue.head;
 			while (p != NULL) {
 				if (p->id == messid) {
@@ -156,8 +156,10 @@ int aprsis_rcvr(void) {
 				}
 				p = p->next;
 			}
+			pthread_mutex_unlock(&(svrstate.messqueue.mutex));
+
 		} else { // Shit! They've sent us a message!
-			// TODO: rej the message...
+			aprsis_rejmess(&mess);
 		}
 
 	}
@@ -180,7 +182,7 @@ int aprsis_xmit(void) {
 		pad_callsign(smallbuf, newmess->call);
 		sprintf(buf, "%s>APZKWF:%s%s {%04X\r\n", svrstate.aprsis_user,
 				smallbuf, newmess->mess, newmess->id);
-		syslog(LOG_DEBUG, "Send [%d] %s\n", 
+		syslog(LOG_DEBUG, "Send [%d] %s", 
 				newmess->send_count + 1, buf);
 
 		nsend(svrstate.aprsis_fd, buf, strlen(buf));
@@ -197,6 +199,7 @@ int aprsis_xmit(void) {
 	return 0;
 }
 
+// Enqueue a new message to call with contents mess
 int aprsis_createmess(char *call, char *mess) {
 
 	// Populate new message_t
@@ -220,6 +223,32 @@ int aprsis_createmess(char *call, char *mess) {
 	aprsis_enqueue(newmess);
 	
 	return 0;
+}
+
+// Form a rejection message to any messages sent to us
+int aprsis_rejmess(struct tnc2_message *mess) {
+	char *id, *tmp, buf[1024], infobuf[128], callbuf[128];
+		
+	id = strchr(mess->info, '{');
+	if (id == NULL) // Not a numbered message?
+		return 0;
+	id++;
+
+	tmp = id;
+	while (isalnum(tmp[0])) tmp++;
+	tmp[0] = '\0';
+
+	if (strlen(id) > 5) // Way too long ID?
+		return 0;
+
+	pad_callsign(callbuf, mess->src);
+	sprintf(infobuf, "%srej%s", callbuf, id);
+
+	sprintf(buf, "%s>APZKWF:%s\r\n", svrstate.aprsis_user, infobuf);
+	syslog(LOG_DEBUG, "Send %s", buf);
+
+	nsend(svrstate.aprsis_fd, buf, strlen(buf));
+
 }
 
 // Add new message to the ordered queue based on epoch next task

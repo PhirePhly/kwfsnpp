@@ -179,3 +179,46 @@ int about(int value) {
 	return value;
 }
 
+int tnc2_parse(struct tnc2_message *mess, char *line) {
+	int rc;
+	char *tmp;
+
+	if (line == NULL)
+		return -1;
+	if (mess == NULL)
+		return -1;
+
+	mess->src = line;
+	// Find end of the initial callsign
+	tmp = strchr(line, '>');
+	// Nothing after the initial callsign?
+	if (tmp == NULL)
+		return -1;
+	tmp[0] = '\0';
+	mess->tnc = tmp+1;
+
+	// Find beginning of routing path
+	tmp = strchr(tmp+1, ',');
+	// No path?
+	if (tmp == NULL)
+		return -1;
+	tmp[0] = '\0';
+
+	mess->path = tmp+1;
+
+	// Find the packet info field
+	tmp = strchr(tmp+1, ':');
+	if (tmp == NULL)
+		return -1;
+	tmp[0] = '\0';
+	mess->info = tmp+1;
+
+	rc = qualify_callsign(mess->src);
+	if (rc == -1)
+		return -1;
+
+	if (strlen(mess->info) < 1)
+		return -1;
+
+	return 0;
+}

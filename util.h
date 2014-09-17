@@ -40,5 +40,15 @@ int pad_callsign(char *target, char *input);
 // Given an integer, dither it between 100% and 112% its value
 int about(int value);
 
+struct tnc2_message {
+	char *src;
+	char *tnc;
+	char *path;
+	char *info;
+};
+
+// Parse a TNC2 monitor line to \0 terminated fields
+int tnc2_parse(struct tnc2_message *mess, char *line);
+
 #endif
 

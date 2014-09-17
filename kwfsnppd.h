@@ -37,6 +37,7 @@ struct SVRSTATE {
 struct snpp_state {
 	int fd; // Client's socket file descriptor
 	struct sockaddr_storage addr;
+	char ipstr[INET6_ADDRSTRLEN+1];
 };
 
 // State machine for each queued message
@@ -68,6 +69,7 @@ int aprsis_connect(void);
 int aprsis_rcvr(void);
 int aprsis_xmit(void);
 int aprsis_createmess(char *call, char *mess);
+int aprsis_rejmess(struct tnc2_message *mess);
 int aprsis_enqueue(struct message_t *newmess);
 struct message_t *aprsis_popqueue(void);
 

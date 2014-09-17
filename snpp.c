@@ -160,8 +160,9 @@ static void * snpp_client(void *arg) {
 	memset(&rcvrbuf, 0, sizeof(struct recvline_state));
 	rcvrbuf.fd = snppstate.fd;
 
-	get_addr_str(buf, sizeof(buf), (struct sockaddr*) &(snppstate.addr));
-	syslog(LOG_DEBUG, "New SNPP connection from %s", buf);
+	get_addr_str(snppstate.ipstr, sizeof(snppstate.ipstr), 
+				(struct sockaddr*) &(snppstate.addr));
+	syslog(LOG_DEBUG, "New SNPP connection from %s", snppstate.ipstr);
 
 	snprintf(buf, sizeof(buf), "%s", SNPP_HELLO);
 	rc = nsend(snppstate.fd, buf, strlen(buf));
@@ -170,7 +171,6 @@ static void * snpp_client(void *arg) {
 	}
 
 	while (1) {
-		printf("snpp loop\n");
 		fd_set snpp_client;
 		FD_ZERO(&snpp_client);
 		FD_SET(snppstate.fd, &snpp_client);
@@ -193,6 +193,7 @@ static void * snpp_client(void *arg) {
 		while ((rc = recvline(&rcvrbuf, &line))) {
 			if (rc == -1) goto cleanup; // Something went wrong
 			linecount++;
+			syslog(LOG_DEBUG, "SNPP %s: %s", snppstate.ipstr, line);
 
 			// Process each line from client
 			if (strncasecmp(line, "PAGE", 4) == 0) {
@@ -249,7 +250,8 @@ static void * snpp_client(void *arg) {
 					continue;
 				}
 
-				printf("SNPP Send: %s:%s\n", nextcall, nextmess);
+				printf("SNPP %s: queued %s:%s", snppstate.ipstr,
+						nextcall, nextmess);
 				aprsis_createmess(nextcall, nextmess);
 
 				memset(nextcall, 0, sizeof(nextcall));

@@ -27,6 +27,7 @@ void aprsis_start () {
 
 	rc = pthread_mutex_init(&(svrstate.messqueue.mutex), NULL);
 	svrstate.messqueue.head = NULL;
+	svrstate.aprsis_beacon = time(NULL);
 
 	pthread_create(&tclient, NULL, aprsis_client, NULL);
 	pthread_detach(tclient);
@@ -48,6 +49,8 @@ static void * aprsis_client(void *arg) {
 
 		// Send messages in job queue
 		aprsis_xmit();
+		aprsis_beacon();
+
 	}
 	return NULL;
 }
@@ -180,7 +183,7 @@ int aprsis_xmit(void) {
 		}
 
 		pad_callsign(smallbuf, newmess->call);
-		sprintf(buf, "%s>APZKWF:%s%s {%04X\r\n", svrstate.aprsis_user,
+		sprintf(buf, "%s>%s:%s%s {%04X\r\n", svrstate.aprsis_user, APRSIDENT,
 				smallbuf, newmess->mess, newmess->id);
 		syslog(LOG_DEBUG, "Send [%d] %s", 
 				newmess->send_count + 1, buf);
@@ -244,11 +247,23 @@ int aprsis_rejmess(struct tnc2_message *mess) {
 	pad_callsign(callbuf, mess->src);
 	sprintf(infobuf, "%srej%s", callbuf, id);
 
-	sprintf(buf, "%s>APZKWF:%s\r\n", svrstate.aprsis_user, infobuf);
+	sprintf(buf, "%s>%s:%s\r\n", svrstate.aprsis_user, APRSIDENT, infobuf);
 	syslog(LOG_DEBUG, "Send %s", buf);
 
 	nsend(svrstate.aprsis_fd, buf, strlen(buf));
 
+}
+
+int aprsis_beacon(void) {
+	time_t now = time(NULL);
+	if (now > svrstate.aprsis_beacon) {
+		svrstate.aprsis_beacon = now + about(10*60);
+		char buf[1024];
+		sprintf(buf, "%s>%s:%s\r\n", svrstate.aprsis_user, APRSIDENT,
+				svrstate.aprsis_beacontxt);
+		syslog(LOG_DEBUG, "Send %s", buf);
+		nsend(svrstate.aprsis_fd, buf, strlen(buf));
+	}
 }
 
 // Add new message to the ordered queue based on epoch next task

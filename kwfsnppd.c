@@ -35,7 +35,7 @@ int main (int argc, char **argv) {
 	svrstate.aprsis_pass = NULL;
 
 	while (1) {
-		rc = getopt(argc, argv, "p:u:s:P:h");
+		rc = getopt(argc, argv, "p:u:b:s:P:h");
 		if (rc < 0)
 			break;
 
@@ -46,8 +46,12 @@ int main (int argc, char **argv) {
 			case 'p': // APRS-IS password
 				svrstate.aprsis_pass = optarg;
 				break;
+			case 'b': // Beacon text - !nnnn.nnN?nnnnn.nnW?
+				svrstate.aprsis_beacontxt = optarg;
+				break;
 			case 's': // APRS-IS upstream server
 				svrstate.aprsis_svr = optarg;
+				break;
 			case 'P': // SNPP service or port
 				svrstate.snpp_port = optarg;
 				break;
@@ -65,6 +69,10 @@ int main (int argc, char **argv) {
 		fprintf(stderr, "ERROR: Missing APRS-IS login password\n");
 		goto usage;
 	}
+	if (svrstate.aprsis_beacontxt == NULL) {
+		fprintf(stderr, "ERROR: Missing beacon text\n");
+		goto usage;
+	}
 
 	// spawn APRS-IS helper thread
 	aprsis_start();
@@ -76,6 +84,7 @@ int main (int argc, char **argv) {
 
 usage:
 	fprintf(stderr, "Syntax: %s -u MYCALL -p 12345\n"
+			"\t\t-b \"beacon text\"\n"
 			"\t\t[-h] [-P SNPP_port]\n", argv[0]);
 	exit(EXIT_FAILURE);
 

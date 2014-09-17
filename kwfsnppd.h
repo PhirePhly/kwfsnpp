@@ -24,6 +24,8 @@ struct SVRSTATE {
 	char *aprsis_user; // APRS-IS login username
 	char *aprsis_pass; // APRS-IS login password
 	int aprsis_fd;
+	time_t aprsis_beacon; // When to next beacon
+	char *aprsis_beacontxt;
 	struct recvline_state aprsis_buf;
 
 	struct {
@@ -70,6 +72,7 @@ int aprsis_rcvr(void);
 int aprsis_xmit(void);
 int aprsis_createmess(char *call, char *mess);
 int aprsis_rejmess(struct tnc2_message *mess);
+int aprsis_beacon(void);
 int aprsis_enqueue(struct message_t *newmess);
 struct message_t *aprsis_popqueue(void);
 

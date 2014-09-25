@@ -3,11 +3,14 @@ PREFIX = /usr/local
 LDLIBS = -lpthread
 
 SRCS = kwfsnppd.c aprsis.c snpp.c util.c
+HEADERS = kwfsnppd.h snpp.h util.h
 
-OBJS = kwfsnppd.o aprsis.o snpp.o util.o
+OBJS = $(SRCS:.c=.o)
 
 kwfsnppd: $(OBJS)
 	$(CC) -o kwfsnppd $(OBJS) $(LDLIBS)
+
+$(OBJS): $(HEADERS)
 
 .PHONY: all install clean
 

@@ -210,7 +210,7 @@ static void * snpp_client(void *arg) {
 					nsend(snppstate.fd, buf, strlen(buf));
 					continue;
 				}
-				snprintf(nextcall, CALL_LEN, "%s", arg);
+				snprintf(nextcall, CALL_LEN+1, "%s", arg);
 				snprintf(buf, sizeof(buf), "%s", SNPP_ID_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
@@ -230,7 +230,7 @@ static void * snpp_client(void *arg) {
 					continue;
 				}
 
-				snprintf(nextmess, MESS_LEN, "%s", arg);
+				snprintf(nextmess, MESS_LEN+1, "%s", arg);
 				snprintf(buf, sizeof(buf), "%s", SNPP_MESS_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}

@@ -8,7 +8,6 @@ HEADERS = kwfsnppd.h snpp.h util.h
 OBJS = $(SRCS:.c=.o)
 
 kwfsnppd: $(OBJS)
-	$(CC) -o kwfsnppd $(OBJS) $(LDLIBS)
 
 $(OBJS): $(HEADERS)
 

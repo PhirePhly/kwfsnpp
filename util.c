@@ -47,17 +47,31 @@ int recvline(struct recvline_state *s, char **next) {
 
 	// If we have any room, read in more data
 	if (s->end_offset < BUFFER_LEN) {
+		fd_set sockset;
+		struct timeval timeout;
+		FD_ZERO(&sockset);
+		FD_SET(s->fd, &sockset);
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		rc = select(s->fd+1, &sockset, NULL, NULL, &timeout);
+		if (rc == 0) {
+			goto findnextline;
+		}
+
 		rc = recv(s->fd, s->buf + s->end_offset,
-				BUFFER_LEN - s->end_offset, MSG_DONTWAIT);
-		if (rc == -1) {
+				BUFFER_LEN - s->end_offset, 0);
+		if (rc == -1) { // Error on the recv
 			if (errno != EAGAIN && errno != EINTR) {
 				return -1;
 			}
+		} else if (rc == 0) { // Socket has been closed
+			return -1;
 		} else {
 			s->end_offset += rc;
 		}
 	}
 
+findnextline:
 	// Find the next newline
 	for (i = s->start_offset; i < s->end_offset; i++) {
 		if (s->buf[i] == '\n' || s->buf[i] == '\r') {

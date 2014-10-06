@@ -3,7 +3,7 @@ PREFIX = /usr/local
 LDLIBS = -lpthread
 
 SRCS = kwfsnppd.c aprsis.c snpp.c util.c
-HEADERS = kwfsnppd.h snpp.h util.h
+HEADERS = kwfsnppd.h snpp.h util.h usagetext.h
 
 OBJS = $(SRCS:.c=.o)
 
@@ -21,5 +21,10 @@ install: kwfsnppd
 	cp -f kwfsnppd $(PREFIX)/bin
 
 clean:
-	-rm -f kwfsnppd *.o *~
+	-rm -f kwfsnppd usagetext.h *.o *~
+
+usagetext.h: usagetext.in
+	sed -e 's/\\/\\\\/g' \
+		-e 's/"/\\"/g' \
+		-e 's/.*/"&",/' <usagetext.in >usagetext.h
 

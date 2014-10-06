@@ -1,4 +1,5 @@
 kwfsnppd
+/usagetext.h
 
 # Object files
 *.o

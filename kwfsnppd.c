@@ -21,7 +21,7 @@
 #include "util.h"
 
 int main (int argc, char **argv) {
-	int rc;
+	int rc, i;
 
 	openlog(NULL, LOG_PERROR | LOG_PID, LOG_DAEMON);
 
@@ -82,10 +82,15 @@ int main (int argc, char **argv) {
 
 	return 0;
 
-usage:
-	fprintf(stderr, "Syntax: %s -u MYCALL -p 12345\n"
-			"\t\t-b \"beacon text\"\n"
-			"\t\t[-h] [-P SNPP_port]\n", argv[0]);
+usage:;
+	char *usagetext[] = {
+#include "usagetext.h"
+		NULL};
+
+	for (i=0; usagetext[i] != NULL; i++) {
+		fprintf(stderr, "%s\n", usagetext[i]);
+	}
+
 	exit(EXIT_FAILURE);
 
 }

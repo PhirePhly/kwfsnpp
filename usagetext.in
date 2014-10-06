@@ -1,0 +1,7 @@
+Call syntax: 
+kwfsnppd -u MYCALL -p 12345
+	-b "beacon text"
+	[-h] [-P SNPP_port]
+
+Beacon text is a raw APRS payload such as:
+!0000.00N/00000.00E?

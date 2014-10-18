@@ -3,6 +3,7 @@
 //
 //
 
+#include <ctype.h>
 #include <errno.h>
 #include <netdb.h>
 #include <pthread.h>
@@ -251,7 +252,7 @@ int aprsis_rejmess(struct tnc2_message *mess) {
 	syslog(LOG_DEBUG, "Send %s", buf);
 
 	nsend(svrstate.aprsis_fd, buf, strlen(buf));
-
+	return 0;
 }
 
 int aprsis_beacon(void) {
@@ -264,6 +265,7 @@ int aprsis_beacon(void) {
 		syslog(LOG_DEBUG, "Send %s", buf);
 		nsend(svrstate.aprsis_fd, buf, strlen(buf));
 	}
+	return 0;
 }
 
 // Add new message to the ordered queue based on epoch next task

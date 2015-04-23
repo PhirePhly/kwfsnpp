@@ -16,7 +16,7 @@
 #define SNPP_ERR_TIMEOUT	"421 Idle timeout; Goodbye!\r\n"
 #define SNPP_ERR_TOOMANY	"421 Too Many Errors; Goodbye!\r\n"
 #define SNPP_ERR_NOTIMPL	"500 Command not valid or implemented\r\n"
-#define SNPP_ERR_MISSING	"503 Error: Pager or Message Missing\r\n"
+#define SNPP_ERR_MISSING	"503 Error: Pager Callsign or Message Missing\r\n"
 
 void snpp_send_help(int fd);
 

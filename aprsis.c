@@ -144,7 +144,8 @@ int aprsis_rcvr(void) {
 		if (strncasecmp(mess.info, smallbuf, 11) != 0) { // Message not to us!
 			continue;
 		}
-		// "::         :ack0000
+
+		// Check for "::         :ack0000
 		if (strncasecmp(mess.info + 11, "ack", 3) == 0 ||
 				strncasecmp(mess.info + 11, "rej", 3) == 0) { // an Ack to us
 			unsigned int messid;
@@ -232,6 +233,25 @@ int aprsis_createmess(char *call, char *mess) {
 // Form a rejection message to any messages sent to us
 int aprsis_rejmess(struct tnc2_message *mess) {
 	char *id, *tmp, buf[1024], infobuf[128], callbuf[128];
+	int wasok = 0; // It was actually ok that they sent us a message
+
+	// Is their message possibly a directed "Pending messages?" query?
+	if (strncasecmp(mess->info + 11, "?APRSM", 6) == 0) {
+		wasok = 1;
+		// Kick the timer on every message pending for mess->src
+		pthread_mutex_lock(&(svrstate.messqueue.mutex));
+
+		struct message_t *p = svrstate.messqueue.head;
+		time_t now = time(NULL);
+		while (p != NULL) {
+			if (strncasecmp(p->call, mess->src, CALL_LEN) == 0) {
+				p->next_try = now;
+			}
+			p = p->next;
+		}
+
+		pthread_mutex_unlock(&(svrstate.messqueue.mutex));
+	}
 		
 	id = strchr(mess->info, '{');
 	if (id == NULL) // Not a numbered message?
@@ -246,9 +266,9 @@ int aprsis_rejmess(struct tnc2_message *mess) {
 		return 0;
 
 	pad_callsign(callbuf, mess->src);
-	sprintf(infobuf, "%srej%s", callbuf, id);
 
-	sprintf(buf, "%s>%s:%s\r\n", svrstate.aprsis_user, APRSIDENT, infobuf);
+	sprintf(buf, "%s>%s:%s%s%s\r\n", svrstate.aprsis_user, APRSIDENT, \
+			callbuf, wasok ? "ack" : "rej", id);
 	syslog(LOG_DEBUG, "Send %s", buf);
 
 	nsend(svrstate.aprsis_fd, buf, strlen(buf));

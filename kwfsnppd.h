@@ -56,7 +56,7 @@ struct message_t {
 	enum mess_state state;
 	time_t next_try;
 	int send_count;
-	char call[CALL_LEN+1];
+	char call[CALL_LEN+1]; // Not space padded
 	char mess[MESS_LEN+1];
 	uint16_t id;
 };

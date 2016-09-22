@@ -1,9 +1,9 @@
 PREFIX = /usr/local
 
-LDLIBS = -lpthread
+LDLIBS = -lpthread -ldl
 
-SRCS = kwfsnppd.c aprsis.c snpp.c util.c
-HEADERS = kwfsnppd.h snpp.h util.h usagetext.h
+SRCS = kwfsnppd.c aprsis.c snpp.c util.c sqlite3.c
+HEADERS = kwfsnppd.h snpp.h util.h usagetext.h sqlite3.h
 
 OBJS = $(SRCS:.c=.o)
 

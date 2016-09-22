@@ -141,23 +141,28 @@ int nsend(int fd, const char *buf, size_t len) {
 }
 
 // Check if is valid callsign per APRS-IS
+// Return 0 for normal station callsigns
+// Return -1 for invalid callsigns
+// Return 1 for bulletin callsigns
 int qualify_callsign (char *call) {
 	int i;
 	int len = strlen(call);
-	if (len < 3)
+	if (len < CALLSIGN_MINLEN)
 		return -1;
-	if (len > 9)
+	if (len > CALLSIGN_MAXLEN)
 		return -1;
 
 	// Rule out invalid callsigns and ones we aren't willing to handle
-	if (strncasecmp(call, "N0CALL", 6) == 0)
+	if (strncasecmp(call, "N0CALL", 6) == 0) // Blacklisted test callsign
 		return -1;
-	if (strncasecmp(call, "NOCALL", 6) == 0)
+	if (strncasecmp(call, "NOCALL", 6) == 0) // Blacklisted test callsign
 		return -1;
-	if (strncasecmp(call, "MYCALL", 6) == 0)
+	if (strncasecmp(call, "MYCALL", 6) == 0) // Blacklisted test callsign
 		return -1;
-	if (strncasecmp(call, "BLN", 3) == 0)
+	if (strncasecmp(call, "BLN", 3) == 0) // We don't handle bulletins
 		return 1;
+
+	// TODO Verify at most one '-' and no more than two char after it
 
 	for (i=0; i< len; i++) {
 		call[i] = toupper(call[i]);
@@ -168,7 +173,7 @@ int qualify_callsign (char *call) {
 // Check a message to see if it is a valid APRS message
 int qualify_message(char *mess) {
 	// Is the message too long?
-	if (strlen(mess) > 67) {
+	if (strlen(mess) > MESS_MAXLEN) {
 		return -1;
 	}
 	// Are there any unprintable ASCII charaters?
@@ -180,7 +185,7 @@ int qualify_message(char *mess) {
 
 // space-pad a 9 character callsign and add :xx: wrapper
 int pad_callsign (char *target, char *input) {
-	if (strlen(input) > 9)
+	if (strlen(input) > CALLSIGN_MAXLEN)
 		return -1;
 
 	sprintf(target, ":         :");

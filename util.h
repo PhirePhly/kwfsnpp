@@ -5,7 +5,10 @@
 #define _UTIL_H_
 
 #define BUFFER_LEN	2048
-#define CALLSIGN_LEN	(9+2+1)
+
+#define CALLSIGN_MINLEN  3
+#define CALLSIGN_MAXLEN  9
+#define MESS_MAXLEN 67
 
 // Convert struct sockaddr into string
 int get_addr_str(char *buf, size_t len, struct sockaddr *sa);

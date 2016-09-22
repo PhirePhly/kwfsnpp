@@ -7,9 +7,6 @@
 #define APRSIDENT	"APZKWF"
 #define SNPPDVERS	"kwfsnppd 0.0"
 
-#define CALL_LEN	9
-#define MESS_LEN	67
-
 #include "util.h"
 
 // Global daemon state
@@ -56,8 +53,8 @@ struct message_t {
 	enum mess_state state;
 	time_t next_try;
 	int send_count;
-	char call[CALL_LEN+1]; // Not space padded
-	char mess[MESS_LEN+1];
+	char call[CALLSIGN_MAXLEN+1]; // Not space padded
+	char mess[MESS_MAXLEN+1];
 	uint16_t id;
 };
 

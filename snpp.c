@@ -23,6 +23,7 @@
 #include "snpp.h"
 #include "util.h"
 
+// Main loop for listening for new SNPP client connections and thread spawn
 void snpp_listen () {
 	int rc, i, yes = 1;
 	fd_set snpp_sock;
@@ -146,8 +147,8 @@ void snpp_listen () {
 static void * snpp_client(void *arg) {
 	int rc;
 	char buf[BUFFER_LEN];
-	char nextcall[CALL_LEN+1];
-	char nextmess[MESS_LEN+1];
+	char nextcall[CALLSIGN_MAXLEN+1];
+	char nextmess[MESS_MAXLEN+1];
 	memset(nextcall, 0, sizeof(nextcall));
 	memset(nextmess, 0, sizeof(nextmess));
 
@@ -210,7 +211,7 @@ static void * snpp_client(void *arg) {
 					nsend(snppstate.fd, buf, strlen(buf));
 					continue;
 				}
-				snprintf(nextcall, CALL_LEN+1, "%s", arg);
+				snprintf(nextcall, CALLSIGN_MAXLEN+1, "%s", arg);
 				snprintf(buf, sizeof(buf), "%s", SNPP_ID_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}
@@ -230,7 +231,7 @@ static void * snpp_client(void *arg) {
 					continue;
 				}
 
-				snprintf(nextmess, MESS_LEN+1, "%s", arg);
+				snprintf(nextmess, MESS_MAXLEN+1, "%s", arg);
 				snprintf(buf, sizeof(buf), "%s", SNPP_MESS_OK);
 				nsend(snppstate.fd, buf, strlen(buf));
 			}

@@ -146,8 +146,10 @@ int aprsis_rcvr(void) {
 		}
 
 		// Check for "::         :ack0000
-		if (strncasecmp(mess.info + 11, "ack", 3) == 0 ||
-				strncasecmp(mess.info + 11, "rej", 3) == 0) { // an Ack to us
+		if (
+				strncasecmp(mess.info + 11, "ack", 3) == 0 ||
+				strncasecmp(mess.info + 11, "rej", 3) == 0
+		) { // an Ack to us
 			unsigned int messid;
 			rc = sscanf(mess.info + 14, "%x", &messid);
 			printf("Ack for mess #%04X\n", messid);
@@ -244,7 +246,7 @@ int aprsis_rejmess(struct tnc2_message *mess) {
 		struct message_t *p = svrstate.messqueue.head;
 		time_t now = time(NULL);
 		while (p != NULL) {
-			if (strncasecmp(p->call, mess->src, CALL_LEN) == 0) {
+			if (strncasecmp(p->call, mess->src, CALLSIGN_MAXLEN) == 0) {
 				p->next_try = now;
 			}
 			p = p->next;
@@ -278,7 +280,9 @@ int aprsis_rejmess(struct tnc2_message *mess) {
 int aprsis_beacon(void) {
 	time_t now = time(NULL);
 	if (now > svrstate.aprsis_beacon) {
+		// Queue next becon in ten minutes
 		svrstate.aprsis_beacon = now + about(10*60);
+
 		char buf[1024];
 		sprintf(buf, "%s>%s:%s\r\n", svrstate.aprsis_user, APRSIDENT,
 				svrstate.aprsis_beacontxt);
